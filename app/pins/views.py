@@ -7,6 +7,7 @@ from core.models import Tag,  Pin
 
 from pins import serializers
 
+
 class BaseRecipeAttrViewSet(viewsets.GenericViewSet,
                             mixins.ListModelMixin,
                             mixins.CreateModelMixin):
@@ -39,3 +40,10 @@ class PinViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retrieve the pins for the authenticated user"""
         return self.queryset.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        """Return appropriate serializer class"""
+        if self.action == 'retrieve':
+            return serializers.PinDetailSerializer
+
+        return self.serializer_class

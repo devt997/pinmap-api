@@ -5,12 +5,21 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Pin
+from core.models import Pin, Tag
 
-from pins.serializers import PinSerializer
+from pins.serializers import PinSerializer, PinDetailSerializer
 import datetime
 PINS_URL = reverse('pins:pin-list')
 
+
+def detail_url(pin_id):
+    """Return recipe detail URL"""
+    return reverse('pins:pin-detail', args=[pin_id])
+
+
+def sample_tag(user, name='Sample data'):
+    """Create and return a sample tag"""
+    return Tag.objects.create(user=user, name=name)
 
 
 def sample_pin(user, **params):
@@ -24,6 +33,7 @@ def sample_pin(user, **params):
 
     return Pin.objects.create(user=user, **defaults)
 
+
 class PublicPinApiTests(TestCase):
     """Test unauthenticated pin API access"""
 
@@ -35,6 +45,7 @@ class PublicPinApiTests(TestCase):
         res = self.client.get(PINS_URL)
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class PrivatePinApiTests(TestCase):
     """Test authenticated pin API access"""
@@ -74,4 +85,14 @@ class PrivatePinApiTests(TestCase):
         serializer = PinSerializer(pins, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_view_pin_detail(self):
+        """Test viewing a pin detail"""
+        pin = sample_pin(user=self.user)
+        pin.tags.add(sample_tag(user=self.user))
+        url = detail_url(pin.id)
+        res = self.client.get(url)
+
+        serializer = PinDetailSerializer(pin)
         self.assertEqual(res.data, serializer.data)
