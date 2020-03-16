@@ -59,7 +59,7 @@ class ModelTests(TestCase):
         pin = models.Pin.objects.create(
             user=sample_user(),
             title='Birthday',
-            date=datetime.datetime.now()
+            date=datetime.date.today()
         )
 
         self.assertEqual(str(pin), pin.title)

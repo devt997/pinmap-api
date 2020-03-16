@@ -13,7 +13,7 @@ PINS_URL = reverse('pins:pin-list')
 
 
 def detail_url(pin_id):
-    """Return recipe detail URL"""
+    """Return pin detail URL"""
     return reverse('pins:pin-detail', args=[pin_id])
 
 
@@ -26,7 +26,7 @@ def sample_pin(user, **params):
     """Create and return a sample pin"""
     defaults = {
         'title': 'Sample pin',
-        'date': datetime.datetime.now(),
+        'date': datetime.date.today(),
 
     }
     defaults.update(params)
@@ -96,3 +96,68 @@ class PrivatePinApiTests(TestCase):
 
         serializer = PinDetailSerializer(pin)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_basic_pin(self):
+        """Test creating pin"""
+        payload = {
+            'title': 'Test pin',
+            'date': datetime.date.today(),
+            }
+        res = self.client.post(PINS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        pin = Pin.objects.get(id=res.data['id'])
+        for key in payload.keys():
+            self.assertEqual(payload[key], getattr(pin, key))
+
+    def test_create_pin_with_tags(self):
+        """Test creating a pin with tags"""
+        tag1 = sample_tag(user=self.user, name='Tag 1')
+        tag2 = sample_tag(user=self.user, name='Tag 2')
+        payload = {
+            'title': 'Test pin with two tags',
+            'tags': [tag1.id, tag2.id],
+            'date': datetime.date.today(),
+        }
+        res = self.client.post(PINS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        pin = Pin.objects.get(id=res.data['id'])
+        tags = pin.tags.all()
+        self.assertEqual(tags.count(), 2)
+        self.assertIn(tag1, tags)
+        self.assertIn(tag2, tags)
+
+    def test_partial_update_pin(self):
+        """Test updating a pin with patch"""
+        pin = sample_pin(user=self.user)
+        pin.tags.add(sample_tag(user=self.user))
+        new_tag = sample_tag(user=self.user, name='test')
+
+        payload = {'title': 'test event', 'tags': [new_tag.id]}
+        url = detail_url(pin.id)
+        self.client.patch(url, payload)
+
+        pin.refresh_from_db()
+        self.assertEqual(pin.title, payload['title'])
+        tags = pin.tags.all()
+        self.assertEqual(len(tags), 1)
+        self.assertIn(new_tag, tags)
+
+    def test_full_update_pin(self):
+        """Test updating a pin with put"""
+        pin = sample_pin(user=self.user)
+        pin.tags.add(sample_tag(user=self.user))
+
+        payload = {
+            'title': 'Test pin with two tags',
+            'date': datetime.date.today(),
+        }
+        url = detail_url(pin.id)
+        self.client.put(url, payload)
+
+        pin.refresh_from_db()
+        self.assertEqual(pin.title, payload['title'])
+        self.assertEqual(pin.date, payload['date'])
+        tags = pin.tags.all()
+        self.assertEqual(len(tags), 0)

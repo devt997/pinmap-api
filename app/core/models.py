@@ -60,7 +60,7 @@ class Pin(models.Model):
     title = models.CharField(max_length=255)
     link = models.CharField(max_length=255, blank=True)
     tags = models.ManyToManyField('Tag')
-    date = models.DateTimeField(auto_now_add=True, blank=True)
+    date = models.DateField(auto_now_add=True, blank=True)
 
     def __str__(self):
         return self.title

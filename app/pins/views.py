@@ -47,3 +47,7 @@ class PinViewSet(viewsets.ModelViewSet):
             return serializers.PinDetailSerializer
 
         return self.serializer_class
+
+    def perform_create(self, serializer):
+        """Create a new pin"""
+        serializer.save(user=self.request.user)
