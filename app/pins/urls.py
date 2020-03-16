@@ -6,7 +6,7 @@ from pins import views
 
 router = DefaultRouter()
 router.register('tags', views.TagViewSet)
-
+router.register('pins', views.PinViewSet)
 app_name = 'pins'
 
 urlpatterns = [

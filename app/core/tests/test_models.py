@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from core import models
-
+import datetime
 def sample_user(email='test@devansh.com', password='testpass'):
     """Create a sample user"""
     return get_user_model().objects.create_user(email, password)
@@ -50,3 +50,13 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(tag), tag.name)
+
+    def test_pin_str(self):
+        """Test the recipe string representation"""
+        pin = models.Pin.objects.create(
+            user=sample_user(),
+            title='Birthday',
+            date=datetime.datetime.now()
+         )
+
+        self.assertEqual(str(pin), pin.title)

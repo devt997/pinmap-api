@@ -40,7 +40,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Tag(models.Model):
-    """Tag to be used for a recipe"""
+    """Tag to be used for a Pin"""
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -49,3 +49,18 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Pin(models.Model):
+    """Pin object"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    title = models.CharField(max_length=255)
+    link = models.CharField(max_length=255, blank=True)
+    tags = models.ManyToManyField('Tag')
+    date = models.DateTimeField(auto_now_add=True, blank=True)
+
+    def __str__(self):
+        return self.title
