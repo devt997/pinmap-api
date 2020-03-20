@@ -4,6 +4,7 @@ from core import models
 import datetime
 from unittest.mock import patch
 
+
 def sample_user(email='test@devansh.com', password='testpass'):
     """Create a sample user"""
     return get_user_model().objects.create_user(email, password)

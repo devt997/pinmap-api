@@ -34,3 +34,12 @@ class PinSerializer(serializers.ModelSerializer):
 class PinDetailSerializer(PinSerializer):
     """Serialze a pin detail"""
     tags = TagSerializer(many=True, read_only=True)
+
+
+class PinImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading images to pin"""
+
+    class Meta:
+        model = Pin
+        fields = ('id', 'image')
+        read_only_fields = ('id',)

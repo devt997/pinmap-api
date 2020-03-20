@@ -1,3 +1,7 @@
+import tempfile
+import os
+
+from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -10,6 +14,11 @@ from core.models import Pin, Tag
 from pins.serializers import PinSerializer, PinDetailSerializer
 import datetime
 PINS_URL = reverse('pins:pin-list')
+
+
+def image_upload_url(pin_id):
+    """Return URL for pin image upload"""
+    return reverse('pins:pin-upload-image', args=[pin_id])
 
 
 def detail_url(pin_id):
@@ -102,7 +111,7 @@ class PrivatePinApiTests(TestCase):
         payload = {
             'title': 'Test pin',
             'date': datetime.date.today(),
-            }
+        }
         res = self.client.post(PINS_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -161,3 +170,36 @@ class PrivatePinApiTests(TestCase):
         self.assertEqual(pin.date, payload['date'])
         tags = pin.tags.all()
         self.assertEqual(len(tags), 0)
+
+
+class PinImageUploadTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user('user', 'testpass')
+        self.client.force_authenticate(self.user)
+        self.pin = sample_pin(user=self.user)
+
+    def tearDown(self):
+        self.pin.image.delete()
+
+    def test_upload_image_to_pin(self):
+        """Test uploading an image to pin"""
+        url = image_upload_url(self.pin.id)
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            res = self.client.post(url, {'image': ntf}, format='multipart')
+
+        self.pin.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('image', res.data)
+        self.assertTrue(os.path.exists(self.pin.image.path))
+
+    def test_upload_image_bad_request(self):
+        """Test uploading an invalid image"""
+        url = image_upload_url(self.pin.id)
+        res = self.client.post(url, {'image': 'notimage'}, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
