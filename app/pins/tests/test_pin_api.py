@@ -203,3 +203,27 @@ class PinImageUploadTests(TestCase):
         res = self.client.post(url, {'image': 'notimage'}, format='multipart')
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_pins_by_tags(self):
+        """Test returning pins with specific tags"""
+        pin1 = sample_pin(user=self.user, title='Thai party',
+                          date=datetime.date.today())
+        pin2 = sample_pin(user=self.user, title='Event',
+                          date=datetime.date.today())
+        tag1 = sample_tag(user=self.user, name='Some tag1')
+        tag2 = sample_tag(user=self.user, name='Some Tag2')
+        pin1.tags.add(tag1)
+        pin2.tags.add(tag2)
+        pin3 = sample_pin(user=self.user, title='New Event')
+
+        res = self.client.get(
+            PINS_URL,
+            {'tags': '{},{}'.format(tag1.id, tag2.id)}
+        )
+
+        serializer1 = PinSerializer(pin1)
+        serializer2 = PinSerializer(pin2)
+        serializer3 = PinSerializer(pin3)
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
